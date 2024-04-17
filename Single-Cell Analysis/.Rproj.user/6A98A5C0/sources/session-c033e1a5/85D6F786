@@ -1,0 +1,26 @@
+{
+    "id": "85D6F786",
+    "path": "~/capsule/code/DTP_Model.R",
+    "project_path": "DTP_Model.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": true,
+    "created": 1712223746934.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "18,40",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1712223718,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1712224005656,
+    "read_only": false,
+    "read_only_alternatives": []
+}

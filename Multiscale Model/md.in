@@ -1,0 +1,21 @@
+mdcrd="output/md"
+cellpar="par.dat"
+dose="dose.dat"
+
+
+# Initial cell number
+N0=1500 #1500
+
+# Dynamical control Parameters
+dt=0.04
+T0=12 # relaxation time
+T1=60 # Final time
+
+ntpr=1
+ntpx=25
+
+
+c=0.5  #0.1650
+
+# Random number seed
+seed=3367

@@ -1,0 +1,27 @@
+# proliferation
+beta0=0.4
+beta1=1.0 #  0.56
+m1=8 #
+m2=9 #
+m3=15  #
+
+K=3.0e5
+
+
+# death in resting phase
+gamma0=0.4 #
+gamma1=1.0 # 0.6
+
+v0=1.5 #0.6,1.5,2.5
+Sigma=1e-3
+yth=0.5
+zeta=0.063 #phi_0
+eta=25
+psi=0.25  #phi_1
+n=6
+#no-drug
+alpha1=4.0 
+
+# drug
+alpha2=7.0
+

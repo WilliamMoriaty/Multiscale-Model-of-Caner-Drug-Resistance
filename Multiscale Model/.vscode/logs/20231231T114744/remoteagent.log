@@ -1,0 +1,20 @@
+2023-12-31 11:47:44.335 [info] 
+
+
+
+
+2023-12-31 11:47:44.335 [info] Extension host agent started.
+2023-12-31 11:48:14.737 [info] [10.0.0.195][3bea8049][ManagementConnection] New connection established.
+2023-12-31 11:48:17.781 [warning] Using the in-memory credential store as the operating system's credential store could not be accessed. Please see https://aka.ms/vscode-server-keyring on how to set this up. Details: Cannot find module '../build/Release/keytar.node'
+Require stack:
+- /.code-server/code-server-4.9.0-linux-amd64/lib/vscode/node_modules/keytar/lib/keytar.js
+- /.code-server/code-server-4.9.0-linux-amd64/lib/vscode/out/bootstrap-amd.js
+- /.code-server/code-server-4.9.0-linux-amd64/out/node/util.js
+- /.code-server/code-server-4.9.0-linux-amd64/out/node/cli.js
+- /.code-server/code-server-4.9.0-linux-amd64/out/node/entry.js
+2023-12-31 11:48:23.615 [info] [10.0.0.195][52a72015][ExtensionHostConnection] New connection established.
+2023-12-31 11:48:23.622 [info] [10.0.0.195][52a72015][ExtensionHostConnection] <80> Launched Extension Host Process.
+2023-12-31 11:50:56.808 [info] [10.0.0.195][3bea8049][ManagementConnection] The client has reconnected.
+2023-12-31 11:50:57.093 [info] [10.0.0.195][52a72015][ExtensionHostConnection] The client has reconnected.
+2023-12-31 11:52:23.497 [info] [10.0.0.195][3bea8049][ManagementConnection] The client has disconnected gracefully, so the connection will be disposed.
+2023-12-31 11:52:23.512 [info] [10.0.0.195][52a72015][ExtensionHostConnection] <80> Extension Host Process exited with code: 0, signal: null.

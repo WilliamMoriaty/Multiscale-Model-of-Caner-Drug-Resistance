@@ -1,0 +1,354 @@
+library(dplyr)
+library(Seurat)
+library(patchwork)
+library(ggpubr)
+library(RColorBrewer)
+#setwd("~/Desktop/Rcode")
+scRNAdptlist<-list()
+# 
+dtpD0.data <- read.table(gzfile("./GSM3972657_D0.dge.txt.gz"), row.names = 1, header = TRUE, sep = "\t")
+scRNAdptlist[[1]] <- CreateSeuratObject(counts = dtpD0.data, project = "D0", min.cells = 3, min.features = 200)
+dtpD1.data <- read.table(gzfile("./GSM3972658_D1.dge.txt.gz"), row.names = 1, header = TRUE, sep = "\t")
+scRNAdptlist[[2]] <- CreateSeuratObject(counts = dtpD1.data, project = "D1", min.cells = 3, min.features = 200)
+dtpD2.data <- read.table(gzfile("./GSM3972659_D2.dge.txt.gz"), row.names = 1, header = TRUE, sep = "\t")
+scRNAdptlist[[3]] <- CreateSeuratObject(counts = dtpD2.data, project = "D2", min.cells = 3, min.features = 200)
+dtpD4.data <- read.table(gzfile("./GSM3972660_D4.dge.txt.gz"), row.names = 1, header = TRUE, sep = "\t")
+scRNAdptlist[[4]] <- CreateSeuratObject(counts = dtpD4.data, project = "D4", min.cells = 3, min.features = 200)
+dtpD9.data <- read.table(gzfile("./GSM3972661_D9.dge.txt.gz"), row.names = 1, header = TRUE, sep = "\t")
+scRNAdptlist[[5]] <- CreateSeuratObject(counts = dtpD9.data, project = "D9", min.cells = 3, min.features = 200)
+dtpD11.data <- read.table(gzfile("./GSM3972662_D11.dge.txt.gz"), row.names = 1, header = TRUE, sep = "\t")
+scRNAdptlist[[6]] <- CreateSeuratObject(counts = dtpD11.data, project = "D11", min.cells = 3, min.features = 200)
+
+scRNAdpt<-merge(scRNAdptlist[[1]], y=c(scRNAdptlist[[2]], scRNAdptlist[[3]],scRNAdptlist[[4]], scRNAdptlist[[5]],scRNAdptlist[[6]]))
+scRNAdpt                
+table(scRNAdpt@meta.data$orig.ident)
+
+scRNAdpt[["percent.mt"]] <- PercentageFeatureSet(scRNAdpt, pattern = "^MT-")
+# Visualize QC metrics as a violin plot
+VlnPlot(scRNAdpt, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+
+# Remove cells with a high proportion of mitochondrial gene expression, and some extreme cells
+dtp <- subset(scRNAdpt, subset = nFeature_RNA > 800 & nFeature_RNA < 7500)
+table(dtp@meta.data$orig.ident)
+# Normalization
+dtp <- NormalizeData(dtp, normalization.method = "LogNormalize", scale.factor = 10000)
+
+#Default value，“vst“method to choose 1000 high variable genes
+dtp <- FindVariableFeatures(dtp, selection.method = "vst", nfeatures = 1000)
+# Identify the 10 most highly variable genes
+top10 <- head(VariableFeatures(dtp), 10)
+#Scaling the data
+all.genes <- rownames(dtp)
+dtp <- ScaleData(dtp, features = all.genes)
+#Perform linear dimensional reduction
+dtp <- RunPCA(dtp, features = VariableFeatures(object = dtp))
+
+dtp <- RunUMAP(dtp, dims = 1:12)
+ElbowPlot(dtp)
+
+dtp <- FindNeighbors(dtp, dims = 1:12)
+dtp <- FindClusters(dtp, resolution = 1.0) 
+head(Idents(dtp), 6)
+
+#UMAP
+DimPlot(object = dtp, reduction = "umap", label = T)+  theme(axis.text = element_blank()) + ## delete axis
+  theme(axis.ticks = element_blank())+## delete label
+  theme(axis.line = element_line(color = "white"))+labs(x = "", y = "", title = "")+theme(text=element_text(face = "bold",family = 'Arial'))+
+  theme(text = element_text(size = 15))
+
+plot<-DimPlot(object = dtp, reduction = "umap", group.by = "orig.ident",order = c("D11","D9","D4","D2","D1","D0"))
+plot<-plot+labs(x = "", y = "", title = "")+theme(legend.text = element_text(size = 12)) + guides(colour = guide_legend(override.aes = list(size = 3))) +
+  theme(axis.text = element_blank()) + ## delete axis
+  theme(axis.ticks = element_blank())+## delete label
+  theme(axis.line = element_line(color = "white"))+theme(text=element_text(face = "bold",family = 'Arial'))+
+  theme(text = element_text(size = 15))
+plot
+
+# G2/M phase gene score
+g2m.genes <- Seurat::cc.genes$g2m.genes
+g2m.genes <- rownames(dtp)[toupper(rownames(dtp)) %in% g2m.genes] # genes in dataset
+gene<-list(g2m.genes)
+dtp <- JoinLayers(dtp)
+
+dtp<-AddModuleScore(object = dtp,features = gene,ctrl = 100,name = 'CD_Features')
+colnames(dtp@meta.data)
+colnames(dtp@meta.data)[7]<-'Cell_Proliferation'
+FeaturePlot(dtp,features = "Cell_Proliferation")+ 
+  scale_colour_gradientn(colours = rev(brewer.pal(n = 10, name = "RdBu")))+theme(axis.text = element_blank()) + ## delete axis
+  theme(axis.ticks = element_blank())+## delete label
+  theme(axis.line = element_line(color = "white"))+labs(x = "", y = "")
+# read cellular response to stress response gene set
+file2<-"cellular_response_to_stress.xlsx"
+cellular_response_to_stress_gene<-readxl::read_xlsx(file2)
+View(cellular_response_to_stress_gene)
+cellular_response_to_stress_gene <- rownames(dtp)[toupper(rownames(dtp)) %in% cellular_response_to_stress_gene$gene] # genes in dataset
+cellular_response_to_stress_gene
+gene<-list(cellular_response_to_stress_gene)
+# revis bug Multilayer not use in Genssay
+dtp <- JoinLayers(dtp)
+
+dtp<-AddModuleScore(object = dtp,features = gene,ctrl = 100,name = 'CD_Features')
+colnames(dtp@meta.data)
+colnames(dtp@meta.data)[8]<-'Epigenetic_instability'
+FeaturePlot(dtp,features = "Epigenetic_instability")+ 
+  scale_colour_gradientn(colours = rev(brewer.pal(n = 10, name = "RdBu")))+theme(axis.text = element_blank()) + ## delete axis
+  theme(axis.ticks = element_blank())+## delete label
+  theme(axis.line = element_line(color = "white"))+labs(x = "", y = "")
+##
+
+
+#UMAP recluster
+Idents(dtp) <- plyr::mapvalues(Idents(dtp), from = levels(dtp), 
+                               to = c("DTP","Naive","Naive","DTP","Resistant","Naive","Naive","DTP","Resistant","Naive","DTP"))
+Idents(dtp) <- factor(Idents(dtp), levels = c("Naive","DTP","Resistant"))
+plot<-DimPlot(dtp, reduction = "umap")+labs(x = "", y = "", title = "")+theme(legend.text = element_text(size = 12)) + guides(colour = guide_legend(override.aes = list(size = 3))) +
+  theme(axis.text = element_blank()) + ## delete axis
+  theme(axis.ticks = element_blank())+## delete label
+  theme(axis.line = element_line(color = "white"))
+plot
+#find markers
+dtp <- JoinLayers(dtp)
+DTP.markers <- FindMarkers(dtp, ident.1 = "DTP",only.pos = TRUE)
+DTP.markers<- subset(DTP.markers, subset = p_val_adj<0.05 & avg_log2FC > 0.25)
+DTP.upgene<- data.frame(rownames(DTP.markers))
+write.table(DTP.upgene,"DTP_recluster_upgene.csv",row.names=FALSE,col.names=TRUE,sep=",")
+
+Naive.markers <- FindMarkers(dtp, ident.1 = "Naive",only.pos = TRUE)
+Naive.markers<- subset(Naive.markers, subset = p_val_adj<0.05 & avg_log2FC > 0.25)
+Naive.upgene<- data.frame(rownames(Naive.markers))
+write.table(Naive.upgene,"Naive_recluster_upgene.csv",row.names=FALSE,col.names=TRUE,sep=",")
+
+Resistant.markers <- FindMarkers(dtp, ident.1 = "Resistant",only.pos = TRUE)
+Resistant.markers<- subset(Resistant.markers, subset = p_val_adj<0.05 & avg_log2FC > 0.25)
+Resistant.upgene<- data.frame(rownames(Resistant.markers))
+write.table(Resistant.upgene,"Resistant_recluster_upgene.csv",row.names=FALSE,col.names=TRUE,sep=",")
+
+mycomparisons <- list(c("Naive", "DTP"), c("DTP","Resistant"))
+violindt = data.frame(Celltype = Idents(dtp),dtp@meta.data[7], dtp@meta.data[8])
+ggviolin(violindt,x='Celltype',y='Epigenetic_instability',fill='Celltype',palette = c('lancet'),draw_quantiles = c( .50))+
+  stat_compare_means(comparisons = mycomparisons)+labs(x="",y="Gene Score")+NoLegend()+theme(text=element_text(
+    face = "bold",family = 'Arial'))+theme(text = element_text(size = 15))
+mycomparisons <- list(c("Naive", "DTP"), c("DTP","Resistant"),c("Naive", "Resistant"))
+ggviolin(violindt,x='Celltype',y='Cell_Proliferation',fill='Celltype',palette = c('lancet'),draw_quantiles = c( .50))+
+  stat_compare_means(comparisons = mycomparisons)+labs(x="",y="Gene Score")+NoLegend()+theme(text=element_text(
+    face = "bold",family = 'Arial'))+theme(text = element_text(size = 15))
+
+library(tidyverse)
+library(clusterProfiler)
+library(pathview)
+library(enrichplot)
+library(msigdbr)
+dtp <- JoinLayers(dtp)
+DTP.markers <- FindMarkers(dtp, ident.1 = "DTP",ident.2 = "Naive",only.pos = TRUE)
+DTP.markers<- subset(DTP.markers, subset = p_val_adj<0.05 & avg_log2FC > 0.25)
+# load species package
+# According to species
+DTP.markers=DTP.markers %>% rownames_to_column('gene')
+OrgDb = "org.Hs.eg.db" 
+
+# Gene Symbol is transformed into gene ENTREZID
+gene_convert <- bitr(DTP.markers$gene, fromType = 'SYMBOL', toType = 'ENTREZID', OrgDb = OrgDb)
+DTP.markers = DTP.markers%>%left_join(gene_convert,by=c("gene"="SYMBOL"))
+# GO
+# posiible value: BP, CC, MF, all
+ont = "BP" 
+go.results <- enrichGO(DTP.markers$ENTREZID, keyType="ENTREZID",ont="BP",OrgD = OrgDb, readable = TRUE)
+
+plot<-barplot(go.results,showCategory = 10)+ggtitle("DTP v.s. Naive")+
+  theme(axis.text = element_blank()) +theme(axis.ticks = element_blank())
+plot<-plot+theme(legend.text = element_text(size = 12)) + guides(colour = guide_legend(override.aes = list(size = 3))) +
+  theme(axis.text = element_blank()) + ## delete axis
+  theme(axis.ticks = element_blank())+theme(text=element_text(
+    face = "bold",family = 'Arial'))+theme(text = element_text(size = 15))## delete label
+
+## Resistant
+dtp <- JoinLayers(dtp)
+Resistant.markers <- FindMarkers(dtp,ident.1 = "Resistant",ident.2="DTP",only.pos = TRUE)
+Resistant.markers<- subset(Resistant.markers, subset = p_val_adj<0.05 & avg_log2FC > 0.25)
+# load species package
+# According to species
+Resistant.markers=Resistant.markers %>% rownames_to_column('gene')
+OrgDb = "org.Hs.eg.db" 
+
+# Gene Symbol is transformed into gene ENTREZID
+gene_convert <- bitr(Resistant.markers$gene, fromType = 'SYMBOL', toType = 'ENTREZID', OrgDb = OrgDb)
+Resistant.markers = Resistant.markers%>%left_join(gene_convert,by=c("gene"="SYMBOL"))
+# GO
+# posiible value: BP, CC, MF, all
+ont = "BP" 
+go.results <- enrichGO(Resistant.markers$ENTREZID, keyType="ENTREZID",ont="BP",OrgD = OrgDb, readable = TRUE)
+
+plot<-barplot(go.results,showCategory = 10)+ggtitle("Resistant v.s. DTP")
+plot<-plot+theme(legend.text = element_text(size = 12)) + guides(colour = guide_legend(override.aes = list(size = 3))) +
+  theme(axis.text = element_blank()) + ## delete axis
+  theme(axis.ticks = element_blank())+theme(text=element_text(
+    face = "bold",family = 'Arial'))+theme(text = element_text(size = 15))## delete label
+
+plot
+
+
+## IMMUNE MARKER GENES
+# feature.IA<-c("CXCL9","CXCL10","CXCL13","PDCD1","LAG3","TNFRSF9","GZMB","IFNG","CCL5")
+# feature.ISM<-c("SPP1","S100A8","S100A9","IL1B","FCER1G","CSF3R","CCL20","CXCL1","CXCL2","CXCL3","CXCL5","CXCL8")
+# feature.ISS<-c("FAP","COL1A1","COL10A1","COL3A1","MMP11","MMP14","ITGA1","LUM","CXCL14","VCAN")
+# feature.IE<-c("APOA1","APOH","APOC3","CD36","FGA","FGB","CD34","KDR","VWF","CXCL12")
+#feature.IR<-c("CCR7","CXCR4","TGFB1","ANXA1","KLRB1","RORA","IL7R")
+# 
+#FeaturePlot(dtp, features = ISM.genes)
+##IA
+file2<-"TIME_IA.xlsx"
+TIME_IA<-readxl::read_xlsx(file2)
+
+IA.genes <- rownames(dtp)[toupper(rownames(dtp)) %in% TIME_IA$gene_IA] # genes in dataset
+IA.genes
+gene<-list(IA.genes)
+# revis bug Multilayer not use in Genssay
+dtp <- JoinLayers(dtp)
+
+dtp<-AddModuleScore(object = dtp,features = gene,ctrl = 100,name = 'CD_Features')
+colnames(dtp@meta.data)
+colnames(dtp@meta.data)[9]<-'TIME_IA'
+#ISM
+file2<-"TIME_ISM.xlsx"
+TIME_ISM<-readxl::read_xlsx(file2)
+ISM.genes <- rownames(dtp)[toupper(rownames(dtp)) %in% TIME_ISM$gene_ISM] # genes in dataset
+ISM.genes
+gene<-list(ISM.genes)
+# revis bug Multilayer not use in Genssay
+dtp <- JoinLayers(dtp)
+
+dtp<-AddModuleScore(object = dtp,features = gene,ctrl = 100,name = 'CD_Features')
+colnames(dtp@meta.data)
+colnames(dtp@meta.data)[10]<-'TIME_ISM'
+#ISS
+file2<-"TIME_ISS.xlsx"
+TIME_ISS<-readxl::read_xlsx(file2)
+ISS.genes <- rownames(dtp)[toupper(rownames(dtp)) %in% TIME_ISS$gene_ISS] # genes in dataset
+ISS.genes
+gene<-list(ISS.genes)
+# revis bug Multilayer not use in Genssay
+dtp <- JoinLayers(dtp)
+
+dtp<-AddModuleScore(object = dtp,features = gene,ctrl = 100,name = 'CD_Features')
+colnames(dtp@meta.data)
+colnames(dtp@meta.data)[11]<-'TIME_ISS'
+#IE
+file2<-"TIME_IE.xlsx"
+TIME_IE<-readxl::read_xlsx(file2)
+IE.genes <- rownames(dtp)[toupper(rownames(dtp)) %in% TIME_IE$gene_IE] # genes in dataset
+IE.genes
+gene<-list(IE.genes)
+# revis bug Multilayer not use in Genssay
+dtp <- JoinLayers(dtp)
+
+dtp<-AddModuleScore(object = dtp,features = gene,ctrl = 100,name = 'CD_Features')
+colnames(dtp@meta.data)
+colnames(dtp@meta.data)[12]<-'TIME_IE'
+#IR
+file2<-"TIME_IR.xlsx"
+TIME_IR<-readxl::read_xlsx(file2)
+IR.genes <- rownames(dtp)[toupper(rownames(dtp)) %in% TIME_IR$gene_IR] # genes in dataset
+IR.genes
+gene<-list(IR.genes)
+# revis bug Multilayer not use in Genssay
+dtp <- JoinLayers(dtp)
+
+dtp<-AddModuleScore(object = dtp,features = gene,ctrl = 100,name = 'CD_Features')
+colnames(dtp@meta.data)
+colnames(dtp@meta.data)[13]<-'TIME_IR'
+
+lindtp = data.frame(dtp@meta.data[,8:13])
+plot1<-ggplot()+geom_point(data=lindtp,mapping = aes(x=Epigenetic_instability,y=TIME_IA))+theme_bw()
+plot2<-ggplot()+geom_point(data=lindtp,mapping = aes(x=Epigenetic_instability,y=TIME_ISM))+theme_bw()
+plot3<-ggplot()+geom_point(data=lindtp,mapping = aes(x=Epigenetic_instability,y=TIME_ISS))+theme_bw()
+plot4<-ggplot()+geom_point(data=lindtp,mapping = aes(x=Epigenetic_instability,y=TIME_IE))+theme_bw()
+plot5<-ggplot()+geom_point(data=lindtp,mapping = aes(x=Epigenetic_instability,y=TIME_IR))+theme_bw()
+
+plot1
+cowplot::plot_grid(plot1,plot2,plot3,plot4,plot5,ncol = 3)
+ lm <- lm(TIME_ISM ~ Epigenetic_instability, data = lindtp)
+ new_epg <- seq(min(lindtp$Epigenetic_instability), max(lindtp$Epigenetic_instability), 0.01)
+ pred_IS <- data.frame(predict(lm, newdata = data.frame(Epigenetic_instability = new_epg),
+                               interval = "confidence"), 
+                       new_epg = new_epg)
+ print(head(pred_IS)) 
+ plot2+  geom_line(data = pred_IS, mapping = aes(x =  new_epg, y = fit), 
+             color = "red", size = 1, alpha = 0.5) +
+   geom_ribbon(data = pred_IS, mapping = aes(x =  new_epg, 
+                                             ymin = lwr, ymax = upr), 
+               fill = "grey", alpha = 0.5)
+# 
+lindtp_scale <- scale(lindtp)
+cor_spearman <- cor(lindtp, method = 'spearman')
+cor_spearman
+# violindt=data.frame(Celltype = Idents(dtp), dtp@meta.data[,8:13])
+# ggviolin(violindt,x='Celltype',y='TIME_IA',fill='Celltype',palette = c('lancet'),draw_quantiles = c( .50))+
+#   stat_compare_means(comparisons = mycomparisons)+labs(x="",y="Gene Score")+NoLegend()+theme(text=element_text(
+#     face = "bold",family = 'Arial'))+theme(text = element_text(size = 15))
+
+## pseudobulk gene expression per cell-type
+getPseudobulk <- function(mat, celltype) {
+  mat.summary <- do.call(cbind, lapply(levels(celltype), function(ct) {
+    cells <- names(celltype)[celltype==ct]
+    pseudobulk <- rowSums(mat[, cells])
+    return(pseudobulk)
+  }))
+  colnames(mat.summary) <- levels(celltype)
+  return(mat.summary)
+}
+mat.summary <- getPseudobulk(dtp[["RNA"]]$counts,dtp@active.ident)
+matr.bulk=data.matrix(mat.summary)
+
+library(GSVA)
+file2<-"cellular_response_to_stress.xlsx"
+cellular_response_to_stress_gene<-readxl::read_xlsx(file2)
+View(cellular_response_to_stress_gene)
+cellular_response_to_stress_gene <- rownames(dtp)[toupper(rownames(dtp)) %in% cellular_response_to_stress_gene$gene] # genes in dataset
+cellular_response_to_stress_gene
+gene1<-list(cellular_response_to_stress_gene)
+# gsva<-gsva(expr = matr.bulk,gene)
+# ?gsva
+
+##IA
+file2<-"TIME_IA.xlsx"
+TIME_IA<-readxl::read_xlsx(file2)
+
+IA.genes <- rownames(dtp)[toupper(rownames(dtp)) %in% TIME_IA$gene_IA] # genes in dataset
+IA.genes
+gene2<-list(IA.genes)
+#ISM
+file2<-"TIME_ISM.xlsx"
+TIME_ISM<-readxl::read_xlsx(file2)
+ISM.genes <- rownames(dtp)[toupper(rownames(dtp)) %in% TIME_ISM$gene_ISM] # genes in dataset
+ISM.genes
+gene3<-list(ISM.genes)
+#ISS
+file2<-"TIME_ISS.xlsx"
+TIME_ISS<-readxl::read_xlsx(file2)
+ISS.genes <- rownames(dtp)[toupper(rownames(dtp)) %in% TIME_ISS$gene_ISS] # genes in dataset
+ISS.genes
+gene4<-list(ISS.genes)
+
+#IE
+file2<-"TIME_IE.xlsx"
+TIME_IE<-readxl::read_xlsx(file2)
+IE.genes <- rownames(dtp)[toupper(rownames(dtp)) %in% TIME_IE$gene_IE] # genes in dataset
+IE.genes
+gene5<-list(IE.genes)
+#IR
+file2<-"TIME_IR.xlsx"
+TIME_IR<-readxl::read_xlsx(file2)
+IR.genes <- rownames(dtp)[toupper(rownames(dtp)) %in% TIME_IR$gene_IR] # genes in dataset
+IR.genes
+gene6<-list(IR.genes)
+gene<-c(gene1,gene2,gene3,gene4,gene5,gene6)
+
+gsva<-gsva(expr = matr.bulk,gene)
+rownames(gsva)<-c("Epigen_Instability","IA","ISM","ISS","IE","IR")
+gsva<-t(gsva)
+cor_pearson <- cor(gsva, method = 'pearson')
+cor_pearson<-data.frame(cor_pearson)
+cor_spearman<-cor(gsva,method="spearman")
+cor_spearman
+
+write.table(cor_pearson,"Pearson_TIME.csv",row.names=TRUE,col.names=TRUE,sep=",")
