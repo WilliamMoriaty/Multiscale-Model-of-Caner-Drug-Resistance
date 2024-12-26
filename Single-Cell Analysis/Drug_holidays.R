@@ -5,7 +5,7 @@ library(ggpubr)
 library(RColorBrewer)
 #setwd("Desktop/Rcode")
 scRNAdptlist<-list()
-# 使用read.table()函数从txt.gz格式的文件中读取数据，并将第一列作为行名
+
 dtpD0.data <- read.table(gzfile("./Drug Holidays/GSM3972669_D0.dge.txt.gz"), row.names = 1, header = TRUE, sep = "\t")
 scRNAdptlist[[1]] <- CreateSeuratObject(counts = dtpD0.data, project = "D0", min.cells = 3, min.features = 200)
 
@@ -32,13 +32,13 @@ scRNAdpt[["percent.mt"]] <- PercentageFeatureSet(scRNAdpt, pattern = "^MT-")
 # Visualize QC metrics as a violin plot
 VlnPlot(scRNAdpt, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
 
-# 去除线粒体基因表达比例过高的细胞，和一些极值细胞
+
 drugholiday <- subset(scRNAdpt, subset = nFeature_RNA > 800 & nFeature_RNA < 7500)
 table(drugholiday @meta.data$orig.ident)
 # Normalization
 drugholiday <- NormalizeData(drugholiday, normalization.method = "LogNormalize", scale.factor = 10000)
 
-#我们使用默认参数，即“vst”方法选取2000个高变基因
+
 drugholiday <- FindVariableFeatures(drugholiday, selection.method = "vst", nfeatures = 2000)
 # Identify the 10 most highly variable genes
 top10 <- head(VariableFeatures(drugholiday), 10)
