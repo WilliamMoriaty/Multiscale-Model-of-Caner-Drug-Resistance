@@ -5,7 +5,7 @@ library(ggpubr)
 library(RColorBrewer)
 setwd("~/Desktop/Rcode")
 scRNAdptlist<-list()
-# 使用read.table()函数从txt.gz格式的文件中读取数据，并将第一列作为行名
+#
 dtpD0.data <- read.table(gzfile("./GSM3972657_D0.dge.txt.gz"), row.names = 1, header = TRUE, sep = "\t")
 scRNAdptlist[[1]] <- CreateSeuratObject(counts = dtpD0.data, project = "D0", min.cells = 3, min.features = 200)
 dtpD1.data <- read.table(gzfile("./GSM3972658_D1.dge.txt.gz"), row.names = 1, header = TRUE, sep = "\t")
