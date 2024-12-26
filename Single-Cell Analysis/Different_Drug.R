@@ -5,7 +5,7 @@ library(ggpubr)
 library(RColorBrewer)
 setwd("~/Desktop/Rcode")
 scRNAdptlist<-list()
-# 使用read.table()函数从txt.gz格式的文件中读取数据，并将第一列作为行名
+# 
 diffdrugD0.data <- read.table(gzfile("./GSM3972657_D0.dge.txt.gz"), row.names = 1, header = TRUE, sep = "\t")
 scRNAdptlist[[1]] <- CreateSeuratObject(counts = diffdrugD0.data, project = "D0", min.cells = 3, min.features = 200)
 diffdrug_ERL.data <- read.table(gzfile("./Different_drug/GSM4494350_PC9D3_ERL1_expression_matrix.txt.gz"), row.names = 1, header = TRUE, sep = "\t")
@@ -19,13 +19,13 @@ scRNAdpt<-merge(scRNAdptlist[[1]], y=c(scRNAdptlist[[2]], scRNAdptlist[[3]],scRN
 scRNAdpt                
 table(scRNAdpt@meta.data$orig.ident)
 
-# 去除线粒体基因表达比例过高的细胞，和一些极值细胞
+#
 diffdrug <- subset(scRNAdpt, subset = nFeature_RNA > 800 & nFeature_RNA < 7500)
 table(diffdrug @meta.data$orig.ident)
 # Normalization
 diffdrug <- NormalizeData(diffdrug, normalization.method = "LogNormalize", scale.factor = 10000)
 
-#我们使用默认参数，即“vst”方法选取2000个高变基因
+#
 diffdrug <- FindVariableFeatures(diffdrug, selection.method = "vst", nfeatures = 2000)
 #Scaling the data
 all.genes <- rownames(diffdrug)
