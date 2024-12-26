@@ -4,7 +4,7 @@ library(patchwork)
 library(ggpubr)
 #setwd("~/Desktop/Rcode/")
 scRNAdptlist<-list()
-# 使用read.table()函数从txt.gz格式的文件中读取数据，并将第一列作为行名
+# 
 dtpD0.data <- read.table(gzfile("./GSM3972657_D0.dge.txt.gz"), row.names = 1, header = TRUE, sep = "\t")
 scRNAdptlist[[1]] <- CreateSeuratObject(counts = dtpD0.data, project = "D0", min.cells = 3, min.features = 200)
 dtpD1.data <- read.table(gzfile("./GSM3972658_D1.dge.txt.gz"), row.names = 1, header = TRUE, sep = "\t")
@@ -26,13 +26,13 @@ scRNAdpt[["percent.mt"]] <- PercentageFeatureSet(scRNAdpt, pattern = "^MT-")
 # Visualize QC metrics as a violin plot
 VlnPlot(scRNAdpt, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
 
-# 去除线粒体基因表达比例过高的细胞，和一些极值细胞
+# 
 dtp <- subset(scRNAdpt, subset = nFeature_RNA > 800 & nFeature_RNA < 7500)
 table(dtp@meta.data$orig.ident)
 # Normalization
 dtp <- NormalizeData(dtp, normalization.method = "LogNormalize", scale.factor = 10000)
 
-#我们使用默认参数，即“vst”方法选取1000个高变基因
+#
 dtp <- FindVariableFeatures(dtp, selection.method = "vst", nfeatures = 1000)
 # Identify the 10 most highly variable genes
 top10 <- head(VariableFeatures(dtp), 10)
@@ -74,14 +74,14 @@ plot
 
 DotPlot(dtp,features = feature.use,cols = c("lightgrey","red"))
 
-#计算平均表达量
+#
 gene_cell_exp <- AverageExpression(dtp,
                                    features = feature.use) 
 gene_cell_exp <- as.data.frame(gene_cell_exp$RNA)
 
-#complexheatmap作图
+#complexheatmap
 library(ComplexHeatmap)
-#顶部细胞类型注释
+#
 df <- data.frame(colnames(gene_cell_exp))
 colnames(df) <- 'class'
 top_anno = HeatmapAnnotation(df = df,#细胞名/cluster
@@ -92,7 +92,7 @@ top_anno = HeatmapAnnotation(df = df,#细胞名/cluster
                                                   'DTP'="#F6F5B4",
                                                   'Transitional DTP'="#2F528F",
                                                   "Resistant"="#E3AD68")))#颜色设置
-#数据标准化缩放一下
+#
 marker_exp <- t(scale(t(gene_cell_exp),scale = T,center = T))
 Heatmap(marker_exp,
         cluster_rows = T,
@@ -129,7 +129,7 @@ top20<- data.frame(rownames(top20))
 write.table(top20,"DTP_marker.csv",row.names=FALSE,col.names=TRUE,sep=",")
 
 
-#data = read.table("gene.txt",header = F,sep=",")#读取文本数据
+#data = read.table("gene.txt",header = F,sep=",")#
 #write.table(data,"cellular_response_to_stress.csv",row.names=FALSE,col.names=TRUE,sep=",")
 
 # G2 and M phases gene set in cell cycle
