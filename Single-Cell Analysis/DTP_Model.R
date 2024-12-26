@@ -3,9 +3,9 @@ library(Seurat)
 library(patchwork)
 library(ggpubr)
 library(RColorBrewer)
-#setwd("~/Desktop/Rcode")
+setwd("~/Desktop/Rcode")
 scRNAdptlist<-list()
-# 
+# 使用read.table()函数从txt.gz格式的文件中读取数据，并将第一列作为行名
 dtpD0.data <- read.table(gzfile("./GSM3972657_D0.dge.txt.gz"), row.names = 1, header = TRUE, sep = "\t")
 scRNAdptlist[[1]] <- CreateSeuratObject(counts = dtpD0.data, project = "D0", min.cells = 3, min.features = 200)
 dtpD1.data <- read.table(gzfile("./GSM3972658_D1.dge.txt.gz"), row.names = 1, header = TRUE, sep = "\t")
@@ -138,6 +138,7 @@ library(clusterProfiler)
 library(pathview)
 library(enrichplot)
 library(msigdbr)
+
 dtp <- JoinLayers(dtp)
 DTP.markers <- FindMarkers(dtp, ident.1 = "DTP",ident.2 = "Naive",only.pos = TRUE)
 DTP.markers<- subset(DTP.markers, subset = p_val_adj<0.05 & avg_log2FC > 0.25)
@@ -287,6 +288,7 @@ cor_spearman
 #     face = "bold",family = 'Arial'))+theme(text = element_text(size = 15))
 
 ## pseudobulk gene expression per cell-type
+
 getPseudobulk <- function(mat, celltype) {
   mat.summary <- do.call(cbind, lapply(levels(celltype), function(ct) {
     cells <- names(celltype)[celltype==ct]
@@ -298,6 +300,7 @@ getPseudobulk <- function(mat, celltype) {
 }
 mat.summary <- getPseudobulk(dtp[["RNA"]]$counts,dtp@active.ident)
 matr.bulk=data.matrix(mat.summary)
+
 
 library(GSVA)
 file2<-"cellular_response_to_stress.xlsx"
@@ -343,12 +346,19 @@ IR.genes
 gene6<-list(IR.genes)
 gene<-c(gene1,gene2,gene3,gene4,gene5,gene6)
 
+library(psych)
 gsva<-gsva(expr = matr.bulk,gene)
 rownames(gsva)<-c("Epigen_Instability","IA","ISM","ISS","IE","IR")
 gsva<-t(gsva)
 cor_pearson <- cor(gsva, method = 'pearson')
 cor_pearson<-data.frame(cor_pearson)
 cor_spearman<-cor(gsva,method="spearman")
-cor_spearman
+
+P11<-cor.test(gsva[,1],gsva[,2],method = 'pearson')$p.value
+P12<-cor.test(gsva[,1],gsva[,3],method = 'pearson')$p.value
+P13<-cor.test(gsva[,1],gsva[,4],method = 'pearson')$p.value
+P14<-cor.test(gsva[,1],gsva[,5],method = 'pearson')$p.value
+P15<-cor.test(gsva[,1],gsva[,6],method = 'pearson')$p.value
+
 
 write.table(cor_pearson,"Pearson_TIME.csv",row.names=TRUE,col.names=TRUE,sep=",")

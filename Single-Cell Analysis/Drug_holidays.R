@@ -5,7 +5,7 @@ library(ggpubr)
 library(RColorBrewer)
 #setwd("Desktop/Rcode")
 scRNAdptlist<-list()
-# 
+# 使用read.table()函数从txt.gz格式的文件中读取数据，并将第一列作为行名
 dtpD0.data <- read.table(gzfile("./Drug Holidays/GSM3972669_D0.dge.txt.gz"), row.names = 1, header = TRUE, sep = "\t")
 scRNAdptlist[[1]] <- CreateSeuratObject(counts = dtpD0.data, project = "D0", min.cells = 3, min.features = 200)
 
@@ -32,13 +32,13 @@ scRNAdpt[["percent.mt"]] <- PercentageFeatureSet(scRNAdpt, pattern = "^MT-")
 # Visualize QC metrics as a violin plot
 VlnPlot(scRNAdpt, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
 
-# 
+# 去除线粒体基因表达比例过高的细胞，和一些极值细胞
 drugholiday <- subset(scRNAdpt, subset = nFeature_RNA > 800 & nFeature_RNA < 7500)
 table(drugholiday @meta.data$orig.ident)
 # Normalization
 drugholiday <- NormalizeData(drugholiday, normalization.method = "LogNormalize", scale.factor = 10000)
 
-#
+#我们使用默认参数，即“vst”方法选取2000个高变基因
 drugholiday <- FindVariableFeatures(drugholiday, selection.method = "vst", nfeatures = 2000)
 # Identify the 10 most highly variable genes
 top10 <- head(VariableFeatures(drugholiday), 10)
@@ -56,8 +56,8 @@ drugholiday <- FindNeighbors(drugholiday, dims = 1:15)
 drugholiday <- FindClusters(drugholiday, resolution = 1.2) 
 head(Idents(drugholiday), 6)
 
-DimPlot(object = drugholiday, reduction = "umap", label = T)+theme(axis.text = element_blank()) + ## 
-  theme(axis.ticks = element_blank())+## 
+DimPlot(object = drugholiday, reduction = "umap", label = T)+theme(axis.text = element_blank()) + ## 删去所有刻度标签
+  theme(axis.ticks = element_blank())+## 删去所有刻度线
   theme(axis.line = element_line(color = "white"))+labs(x = "", y = "")+theme(text=element_text(face = "bold",family = 'Arial'))+
   theme(text = element_text(size = 15))
 
@@ -77,8 +77,8 @@ dtp<-AddModuleScore(object = dtp,features = DTP_gene_top20,ctrl = 100,name = 'CD
 colnames(dtp@meta.data)
 colnames(dtp@meta.data)[7]<-'DTP'
 FeaturePlot(dtp,features = "DTP")+ 
-  scale_colour_gradientn(colours = rev(brewer.pal(n = 10, name = "RdBu")))+theme(axis.text = element_blank()) + ## 
-  theme(axis.ticks = element_blank())+## 
+  scale_colour_gradientn(colours = rev(brewer.pal(n = 10, name = "RdBu")))+theme(axis.text = element_blank()) + ## 删去所有刻度标签
+  theme(axis.ticks = element_blank())+## 删去所有刻度线
   theme(axis.line = element_line(color = "white"))+labs(x = "", y = "")
 # naive
 file2<-"Naive_recluster_upgene.csv"
@@ -94,8 +94,8 @@ dtp<-AddModuleScore(object = dtp,features = gene,ctrl = 100,name = 'CD_Features'
 colnames(dtp@meta.data)
 colnames(dtp@meta.data)[8]<-'Naive'
 FeaturePlot(dtp,features = "Naive")+ 
-  scale_colour_gradientn(colours = rev(brewer.pal(n = 10, name = "RdBu")))+theme(axis.text = element_blank()) + ## 
-  theme(axis.ticks = element_blank())+## 
+  scale_colour_gradientn(colours = rev(brewer.pal(n = 10, name = "RdBu")))+theme(axis.text = element_blank()) + ## 删去所有刻度标签
+  theme(axis.ticks = element_blank())+## 删去所有刻度线
   theme(axis.line = element_line(color = "white"))+labs(x = "", y = "")
 
 # Resistant
@@ -112,17 +112,17 @@ dtp<-AddModuleScore(object = dtp,features = gene,ctrl = 100,name = 'CD_Features'
 colnames(dtp@meta.data)
 colnames(dtp@meta.data)[9]<-'Resistant'
 FeaturePlot(dtp,features = "Resistant")+ 
-  scale_colour_gradientn(colours = rev(brewer.pal(n = 10, name = "RdBu")))+theme(axis.text = element_blank()) + ## 
-  theme(axis.ticks = element_blank())+## 
+  scale_colour_gradientn(colours = rev(brewer.pal(n = 10, name = "RdBu")))+theme(axis.text = element_blank()) + ## 删去所有刻度标签
+  theme(axis.ticks = element_blank())+## 删去所有刻度线
   theme(axis.line = element_line(color = "white"))+labs(x = "", y = "")
 
 plot<-DimPlot(object = drugholiday, reduction = "umap", group.by = "orig.ident",order = c("D19_ERL","D19_DMSO","D11_ERL","D2","D0"))
 plot<-plot+labs(x = "", y = "", title = "")+theme(legend.text = element_text(size = 12)) + guides(colour = guide_legend(override.aes = list(size = 3))) +
-  theme(axis.text = element_blank()) + ## 
+  theme(axis.text = element_blank()) + ## 删去所有刻度标签
   theme(axis.ticks = element_blank())+
   theme(axis.line = element_line(color = "white"))+theme(text=element_text(face = "bold",family = 'Arial'))+
   theme(text = element_text(size = 15))
-  ## 
+  ## 删去所有刻度线
 
 plot
 
@@ -133,8 +133,8 @@ Idents(dtp) <- plyr::mapvalues(Idents(dtp), from = levels(dtp),
                                to = c("Resistant","Resistant","Naive","Naive","Naive","Resistant","Naive","Naive","DTP","Resistant","Naive","DTP","Resistant"))
 Idents(dtp) <- factor(Idents(dtp), levels = c("Naive","DTP","Resistant"))
 plot<-DimPlot(dtp, reduction = "umap")+labs(x = "", y = "", title = "")+theme(legend.text = element_text(size = 12)) + guides(colour = guide_legend(override.aes = list(size = 3))) +
-  theme(axis.text = element_blank()) + ## 
-  theme(axis.ticks = element_blank())+## 
+  theme(axis.text = element_blank()) + ## 删去所有刻度标签
+  theme(axis.ticks = element_blank())+## 删去所有刻度线
   theme(axis.line = element_line(color = "white"))
 plot
 
@@ -164,7 +164,7 @@ ggviolin(violindt,x='orig.ident',y='Epigenetic_instability',alpha = 1.0, width =
 
 ##########
 scRNAdptlist<-list()
-
+# 使用read.table()函数从txt.gz格式的文件中读取数据，并将第一列作为行名
 dtpD0.data <- read.table(gzfile("./Drug Holidays/GSM3972669_D0.dge.txt.gz"), row.names = 1, header = TRUE, sep = "\t")
 scRNAdptlist[[1]] <- CreateSeuratObject(counts = dtpD0.data, project = "D0", min.cells = 3, min.features = 200)
 
@@ -188,7 +188,7 @@ scRNAdpt[["percent.mt"]] <- PercentageFeatureSet(scRNAdpt, pattern = "^MT-")
 # Visualize QC metrics as a violin plot
 VlnPlot(scRNAdpt, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
 
-
+# 去除线粒体基因表达比例过高的细胞，和一些极值细胞
 drugholiday <- subset(scRNAdpt, subset = nFeature_RNA > 800 & nFeature_RNA < 7500)
 table(drugholiday @meta.data$orig.ident)
 # Normalization
