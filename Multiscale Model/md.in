@@ -4,7 +4,7 @@ dose="dose.dat"
 
 
 # Initial cell number
-N0=1500 #1500
+N0=5000 #1500
 
 # Dynamical control Parameters
 dt=0.04
