@@ -9,5 +9,5 @@ The command "run.sh" dominates running of the program.
 2. The document "Single-Cell Model" performs PDE numerical simulation. In this document, we model the emergence probability of three cell types during the progression of acquired drug resistance.
 3. The document "Single-Cell Analysis" performs model-based clustering and statistic analysis to single-cell RNA sequencing data.
 4. The document "Multidimensional data" includes all real datasets from published literatures. More details are in the manuscript.
- 
 
+[Fig2.tif](https://github.com/user-attachments/files/22683784/Fig2.tif)
