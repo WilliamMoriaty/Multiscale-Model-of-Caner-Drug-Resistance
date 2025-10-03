@@ -10,4 +10,4 @@ The command "run.sh" dominates running of the program.
 3. The document "Single-Cell Analysis" performs model-based clustering and statistic analysis to single-cell RNA sequencing data.
 4. The document "Multidimensional data" includes all real datasets from published literatures. More details are in the manuscript.
 
-[Fig2.tif](https://github.com/user-attachments/files/22683784/Fig2.tif)
+<img width="8667" height="3237" alt="Fig2" src="https://github.com/user-attachments/assets/59495a50-c0fe-427a-8c3d-d24ca025bce3" />
